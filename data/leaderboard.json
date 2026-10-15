@@ -1,0 +1,82 @@
+[
+  {
+    "id": 1,
+    "name": "Elena Rostova",
+    "category": "Engineering",
+    "score": 950,
+    "badge": "🔥 Grandmaster",
+    "streak": 7,
+    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=Elena",
+    "rank": 1
+  },
+  {
+    "id": 2,
+    "name": "Kai Thorne",
+    "category": "Data Science",
+    "score": 885,
+    "badge": "⚡ Speedster",
+    "streak": 5,
+    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=Kai",
+    "rank": 2
+  },
+  {
+    "id": 3,
+    "name": "Aria Chen",
+    "category": "Design",
+    "score": 820,
+    "badge": "✨ Visionary",
+    "streak": 4,
+    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=Aria",
+    "rank": 3
+  },
+  {
+    "id": 4,
+    "name": "Mateo Silva",
+    "category": "Product",
+    "score": 760,
+    "badge": "🎯 Strategist",
+    "streak": 3,
+    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=Mateo",
+    "rank": 4
+  },
+  {
+    "id": 5,
+    "name": "Zoe Vance",
+    "category": "Security",
+    "score": 710,
+    "badge": "🛡️ Guardian",
+    "streak": 6,
+    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=Zoe",
+    "rank": 5
+  },
+  {
+    "id": 6,
+    "name": "Darius Knox",
+    "category": "Engineering",
+    "score": 680,
+    "badge": "🚀 Climber",
+    "streak": 2,
+    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=Darius",
+    "rank": 6
+  },
+  {
+    "id": 7,
+    "name": "Nova Miller",
+    "category": "Marketing",
+    "score": 630,
+    "badge": "🌟 Rising Star",
+    "streak": 4,
+    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=Nova",
+    "rank": 7
+  },
+  {
+    "id": 8,
+    "name": "Liam Gallagher",
+    "category": "Gaming",
+    "score": 590,
+    "badge": "🎮 Contender",
+    "streak": 1,
+    "avatar": "https://api.dicebear.com/7.x/bottts/svg?seed=Liam",
+    "rank": 8
+  }
+]

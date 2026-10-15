@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arena // Real-Time Leaderboard System</title>
+  <meta name="description" content="Production-grade real-time leaderboard web application with Python FastAPI backend, SQLAlchemy SQLite persistence, WebSockets, and modern glassmorphic UI." />
+  
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏆</text></svg>" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts & Custom CSS -->
+  <link rel="stylesheet" href="static/css/style.css" />
+</head>
+<body class="min-h-screen bg-[#070a13] text-slate-100 flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+  <!-- Ambient Glowing Background Elements -->
+  <div class="bg-ambient-orb bg-orb-1"></div>
+  <div class="bg-ambient-orb bg-orb-2"></div>
+  <div class="bg-ambient-orb bg-orb-3"></div>
+
+  <!-- Header Section -->
+  <header class="relative z-10 border-b border-slate-800/80 glass-panel sticky top-0">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+      
+      <!-- Brand Logo & Title -->
+      <div class="flex items-center gap-3.5">
+        <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 p-0.5 shadow-lg shadow-indigo-500/25 flex items-center justify-center">
+          <div class="w-full h-full bg-slate-950/70 rounded-[14px] flex items-center justify-center text-2xl">
+            🏆
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-xl sm:text-2xl font-black tracking-tight text-white font-heading">
+              ARENA <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400 font-extrabold text-sm sm:text-base ml-1">LIVE</span>
+            </h1>
+            <div id="connection-status-badge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-950/80 text-emerald-300 border border-emerald-500/30">
+              <span id="connection-status-dot" class="w-2 h-2 rounded-full bg-emerald-400 live-pulse-dot"></span>
+              <span id="connection-status-text">CONNECTING...</span>
+            </div>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">Full-Stack Real-Time Leaderboard System</p>
+        </div>
+      </div>
+
+      <!-- Header Controls & CTA -->
+      <div class="flex items-center gap-2.5 sm:gap-3">
+        <!-- Sound FX Toggle -->
+        <button id="sound-toggle-btn" onclick="toggleSound()" class="px-3 py-2 rounded-xl text-xs font-semibold glass-card text-slate-300 hover:text-white hover:border-slate-600 transition flex items-center gap-1.5" title="Toggle Audio Sound FX">
+          🔊 <span class="hidden sm:inline">Audio On</span>
+        </button>
+
+        <!-- Export Dropdown -->
+        <div class="relative group">
+          <button class="px-3 py-2 rounded-xl text-xs font-semibold glass-card text-slate-300 hover:text-white hover:border-slate-600 transition flex items-center gap-1.5">
+            📥 <span class="hidden sm:inline">Export</span>
+          </button>
+          <div class="absolute right-0 mt-1 w-32 glass-panel rounded-xl shadow-xl py-1 hidden group-hover:block border border-slate-700/80 z-50">
+            <button onclick="exportData('json')" class="w-full text-left px-3 py-1.5 text-xs text-slate-300 hover:bg-indigo-600 hover:text-white transition">JSON Format</button>
+            <button onclick="exportData('csv')" class="w-full text-left px-3 py-1.5 text-xs text-slate-300 hover:bg-indigo-600 hover:text-white transition">CSV Spreadsheet</button>
+          </div>
+        </div>
+
+        <!-- Add Participant Primary Button -->
+        <button onclick="openAddParticipantModal()" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-cyan-500 shadow-lg shadow-indigo-600/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2">
+          <span class="text-base font-normal leading-none">+</span>
+          <span>Add Challenger</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Content Body -->
+  <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1 space-y-8">
+
+    <!-- Stats Overview Cards Strip -->
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="glass-card rounded-2xl p-4 border border-slate-800">
+        <div class="flex items-center justify-between text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">
+          <span>Total Competitors</span>
+          <span class="text-indigo-400 text-base">👥</span>
+        </div>
+        <div class="text-2xl sm:text-3xl font-black font-heading text-slate-100" id="stat-total">--</div>
+        <div class="text-[11px] text-slate-500 mt-1">Active participants in arena</div>
+      </div>
+
+      <div class="glass-card rounded-2xl p-4 border border-slate-800">
+        <div class="flex items-center justify-between text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">
+          <span>Apex Score</span>
+          <span class="text-amber-400 text-base">👑</span>
+        </div>
+        <div class="text-2xl sm:text-3xl font-black font-heading text-amber-300" id="stat-top-score">--</div>
+        <div class="text-[11px] text-slate-500 mt-1">Highest points record</div>
+      </div>
+
+      <div class="glass-card rounded-2xl p-4 border border-slate-800">
+        <div class="flex items-center justify-between text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">
+          <span>Average Score</span>
+          <span class="text-cyan-400 text-base">📊</span>
+        </div>
+        <div class="text-2xl sm:text-3xl font-black font-heading text-cyan-300" id="stat-avg-score">--</div>
+        <div class="text-[11px] text-slate-500 mt-1">Division mean score</div>
+      </div>
+
+      <div class="glass-card rounded-2xl p-4 border border-slate-800">
+        <div class="flex items-center justify-between text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">
+          <span>Top Category</span>
+          <span class="text-emerald-400 text-base">🔥</span>
+        </div>
+        <div class="text-2xl sm:text-3xl font-black font-heading text-emerald-300 truncate" id="stat-top-category">--</div>
+        <div class="text-[11px] text-slate-500 mt-1">Most competitive division</div>
+      </div>
+    </section>
+
+    <!-- Top 3 Olympic Podium Section -->
+    <section class="glass-panel rounded-3xl p-6 sm:p-8 border border-slate-700/60 shadow-2xl relative overflow-hidden">
+      <div class="absolute -right-16 -top-16 w-56 h-56 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+        <div>
+          <h2 class="text-lg sm:text-xl font-extrabold text-white flex items-center gap-2">
+            <span>Hall of Fame</span>
+            <span class="text-xs px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">Top 3 Podium</span>
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">Real-time dynamic ranking of the highest scorers</p>
+        </div>
+        <div class="text-xs text-slate-400 italic">
+          Automatic instant sorting by score
+        </div>
+      </div>
+
+      <!-- Podium Cards Container -->
+      <div id="podium-view" class="w-full">
+        <!-- Rendered dynamically by app.js -->
+        <div class="flex items-center justify-center py-12 text-slate-500 text-sm">
+          Loading podium standings...
+        </div>
+      </div>
+    </section>
+
+    <!-- Search, Filter & Controls Toolbar -->
+    <section class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      
+      <!-- Search Input -->
+      <div class="relative flex-1 max-w-md">
+        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 text-sm">
+          🔍
+        </span>
+        <input 
+          id="search-input" 
+          type="text" 
+          placeholder="Search participant by name or category..." 
+          class="w-full pl-10 pr-4 py-2.5 rounded-xl glass-card text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 border border-slate-700/80 transition"
+        />
+      </div>
+
+      <!-- Right Toolbar: View Toggle & Reset -->
+      <div class="flex items-center flex-wrap gap-2.5">
+        <!-- View Toggle (Table / Grid) -->
+        <div class="inline-flex items-center p-1 rounded-xl glass-card border border-slate-800">
+          <button id="btn-view-table" onclick="setViewMode('table')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow transition">
+            ☷ Table
+          </button>
+          <button id="btn-view-cards" onclick="setViewMode('cards')" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">
+            ⊞ Cards
+          </button>
+        </div>
+
+        <!-- Reset Button -->
+        <button onclick="resetLeaderboard()" class="px-3.5 py-2 rounded-xl text-xs font-semibold glass-card text-slate-300 hover:text-white hover:border-slate-600 hover:bg-slate-800/80 transition flex items-center gap-1.5" title="Reset to Sample Demo Dataset">
+          🔄 <span>Reset Demo Data</span>
+        </button>
+      </div>
+
+    </section>
+
+    <!-- Category Filter Pills -->
+    <section>
+      <div id="category-pills" class="flex items-center gap-2 overflow-x-auto pb-1 text-sm">
+        <!-- Rendered dynamically by app.js -->
+      </div>
+    </section>
+
+    <!-- Leaderboard Rows / Cards View -->
+    <section id="leaderboard-content" class="w-full">
+      <!-- Rendered dynamically by app.js -->
+      <div class="p-12 text-center text-slate-500 text-sm glass-card rounded-2xl">
+        Connecting to real-time leaderboard...
+      </div>
+    </section>
+
+    <!-- Live Activity Ticker Bar -->
+    <section class="glass-card rounded-2xl p-3.5 border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div class="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider shrink-0">
+        <span class="w-2 h-2 rounded-full bg-indigo-400 live-pulse-dot"></span>
+        <span>Live Activity Feed:</span>
+      </div>
+      <div id="activity-feed" class="flex items-center gap-2 overflow-x-auto text-xs py-0.5">
+        <!-- Live activity entries rendered by app.js -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="relative z-10 border-t border-slate-800/60 py-6 mt-12 glass-panel">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+      <div class="flex items-center gap-2">
+        <span class="text-indigo-400 font-bold">ARENA</span> &copy; 2026 Real-Time Leaderboard System
+      </div>
+      <div class="flex items-center gap-4">
+        <span>Powered by FastAPI &bull; SQLAlchemy ORM &bull; WebSockets</span>
+        <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="hover:text-slate-200 transition">GitHub</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ======================================================== -->
+  <!-- MODALS                                                   -->
+  <!-- ======================================================== -->
+
+  <!-- 1. Add Participant Modal -->
+  <div id="add-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay hidden">
+    <div class="glass-panel w-full max-w-md rounded-2xl border border-slate-700/80 shadow-2xl overflow-hidden p-6 relative">
+      <button onclick="closeAddParticipantModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg font-bold">
+        &times;
+      </button>
+
+      <div class="flex items-center gap-3 mb-5">
+        <div class="w-10 h-10 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-xl">
+          ➕
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-white font-heading">Register Challenger</h3>
+          <p class="text-xs text-slate-400">Add a new participant to the live leaderboard</p>
+        </div>
+      </div>
+
+      <form id="add-form" onsubmit="submitAddParticipant(event)" class="space-y-4">
+        <!-- Live Avatar Preview & Name -->
+        <div class="flex items-center gap-4">
+          <img id="avatar-preview" src="https://api.dicebear.com/7.x/bottts/svg?seed=NewChallenger" alt="Avatar Preview" class="w-14 h-14 rounded-2xl bg-slate-800 border-2 border-indigo-500/40 p-1 object-cover shrink-0" />
+          <div class="flex-1">
+            <label class="block text-xs font-semibold text-slate-300 mb-1" for="input-name">Participant Name *</label>
+            <input id="input-name" type="text" required placeholder="e.g., Alexandra Cruz" class="w-full px-3 py-2 rounded-xl glass-card text-sm text-slate-100 placeholder-slate-500 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+        </div>
+
+        <!-- Category -->
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1" for="input-category">Category / Division</label>
+          <select id="input-category" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="Engineering">Engineering</option>
+            <option value="Design">Design</option>
+            <option value="Data Science">Data Science</option>
+            <option value="Product">Product</option>
+            <option value="Security">Security</option>
+            <option value="Marketing">Marketing</option>
+            <option value="Gaming">Gaming</option>
+            <option value="General">General</option>
+          </select>
+        </div>
+
+        <!-- Initial Score & Badge -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1" for="input-score">Initial Score</label>
+            <input id="input-score" type="number" min="0" value="100" class="w-full px-3 py-2 rounded-xl glass-card text-sm text-slate-100 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1" for="input-badge">Honorary Badge</label>
+            <input id="input-badge" type="text" placeholder="e.g. ⚡ Sharpshooter" class="w-full px-3 py-2 rounded-xl glass-card text-sm text-slate-100 placeholder-slate-500 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+          <button type="button" onclick="closeAddParticipantModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 transition">
+            Cancel
+          </button>
+          <button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition shadow-lg shadow-indigo-600/30">
+            Add Challenger
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. Set Exact Score Modal -->
+  <div id="set-score-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay hidden">
+    <div class="glass-panel w-full max-w-sm rounded-2xl border border-slate-700/80 shadow-2xl overflow-hidden p-6 relative">
+      <button onclick="closeSetScoreModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg font-bold">
+        &times;
+      </button>
+
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center text-xl">
+          🎯
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-white font-heading">Set Exact Score</h3>
+          <p class="text-xs text-slate-400" id="set-score-name">Participant</p>
+        </div>
+      </div>
+
+      <form onsubmit="submitSetScore(event)" class="space-y-4">
+        <div class="text-xs text-slate-400">
+          Current score: <span class="font-bold text-amber-300 font-heading text-sm" id="set-score-current">0</span> pts
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1" for="input-exact-score">New Absolute Score</label>
+          <input id="input-exact-score" type="number" min="0" required class="w-full px-3 py-2 rounded-xl glass-card text-lg font-bold font-heading text-slate-100 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500" />
+        </div>
+        <div class="flex items-center justify-end gap-3 pt-2">
+          <button type="button" onclick="closeSetScoreModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 transition">
+            Cancel
+          </button>
+          <button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-500 transition shadow-lg shadow-amber-600/30">
+            Update Score
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. Edit Participant Modal -->
+  <div id="edit-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay hidden">
+    <div class="glass-panel w-full max-w-md rounded-2xl border border-slate-700/80 shadow-2xl overflow-hidden p-6 relative">
+      <button onclick="closeEditParticipantModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg font-bold">
+        &times;
+      </button>
+
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center justify-center text-xl">
+          ✏️
+        </div>
+        <div>
+          <h3 class="text-base font-bold text-white font-heading">Edit Participant</h3>
+          <p class="text-xs text-slate-400">Update competitor attributes</p>
+        </div>
+      </div>
+
+      <form onsubmit="submitEditParticipant(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1" for="edit-name">Name</label>
+          <input id="edit-name" type="text" required class="w-full px-3 py-2 rounded-xl glass-card text-sm text-slate-100 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1" for="edit-category">Category</label>
+          <input id="edit-category" type="text" required class="w-full px-3 py-2 rounded-xl glass-card text-sm text-slate-100 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1" for="edit-badge">Badge</label>
+          <input id="edit-badge" type="text" class="w-full px-3 py-2 rounded-xl glass-card text-sm text-slate-100 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1" for="edit-avatar">Avatar URL</label>
+          <input id="edit-avatar" type="url" class="w-full px-3 py-2 rounded-xl glass-card text-sm text-slate-100 border border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        </div>
+        <div class="flex items-center justify-end gap-3 pt-2">
+          <button type="button" onclick="closeEditParticipantModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 transition">
+            Cancel
+          </button>
+          <button type="submit" class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 transition shadow-lg shadow-blue-600/30">
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Client JavaScript Application -->
+  <script src="static/js/app.js"></script>
+</body>
+</html>

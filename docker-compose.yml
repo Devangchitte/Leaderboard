@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  leaderboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: arena-realtime-leaderboard
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Persistent SQLite database volume mapping
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
